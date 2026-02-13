@@ -13,7 +13,7 @@ It includes:
 
 ## Want more?
 
-If you want the all-in-one workflow kit I use across **Claude Code, Codex CLI, and Cursor**—including ready-to-run agents/skills/rules and full source from my YouTube builds—check out [BuilderPack.ai](https://www.builderpack.ai/?utm_campaign=threejs_pirate_01&utm_source=github&utm_medium=readme).
+If you want the all-in-one workflow kit I use across **Claude Code, Codex CLI, and Cursor**—including ready-to-run agents/skills/rules and full source from my YouTube builds—check out [BuilderPack.ai](https://www.builderpack.ai/?utm_campaign=threejs_pirate_01&utm_source=github&utm_medium=readme). Game dev vibe coding resources like this are coming soon to BuilderPack.ai too.
 
 ---
 
@@ -39,19 +39,9 @@ No external sprites or textures — characters are self-contained GLB models.
 ## Project Structure
 
 ```
-index.html                # Entry point
-src/
-  main.js                 # Three.js scene, renderer, animation loop
 public/
   assets/
-    assets_index.json     # Animation metadata (clip names, durations, loop modes)
-    glb/
-      pirate/
-        pirate_skeleton.glb
-        pirate_animations.glb
-      bartender/
-        bartender_skeleton.glb
-        bartender_animations.glb
+    assets_index.json         # Animation metadata (clip names, durations, loop modes)
 prompts/
   01-character-creation.txt   # Gemini 3D character generation
   02-level-creation.txt       # 2.5D background creation
@@ -59,6 +49,9 @@ prompts/
   04-animate-bg.txt           # Looping background animations
   05-asset-json.txt           # Animation index metadata
   06-threejs-scene.txt        # Three.js viewer scene setup
+docs/
+  preview.gif                 # Demo recordings
+  preview-02.gif
 ```
 
 ## License
