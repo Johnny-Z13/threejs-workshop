@@ -1,0 +1,3 @@
+How about if i want some elements in the image esp those in the background to animate, but subtley so that it can animate endleslsy in a loop, so that my player can be idle or walk around .
+
+what prompt should i give an image to video generator like seedance

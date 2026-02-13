@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-02-06T00:00:00.000Z",
+  "characters": {
+    "pirate": {
+      "id": "pirate",
+      "displayName": "Pirate",
+      "skeleton": {
+        "url": "/assets/glb/pirate/pirate_skeleton.glb",
+        "bindPose": {
+          "id": "bind_pose",
+          "displayName": "Bind Pose",
+          "sourceClipName": "Armature|clip0|baselayer",
+          "durationSec": 0.033,
+          "loop": "once",
+          "notes": "Very short clip; likely exporter pose/artifact."
+        }
+      },
+      "animationSource": {
+        "url": "/assets/glb/pirate/pirate_animations.glb"
+      },
+      "animations": [
+        {
+          "id": "idle",
+          "displayName": "Idle",
+          "sourceClipName": "Running",
+          "durationSec": 9.967,
+          "loop": "repeat",
+          "tags": [
+            "idle"
+          ]
+        },
+        {
+          "id": "walk",
+          "displayName": "Walk",
+          "sourceClipName": "Idle_3",
+          "durationSec": 1.033,
+          "loop": "repeat",
+          "tags": [
+            "locomotion",
+            "walk"
+          ]
+        },
+        {
+          "id": "run",
+          "displayName": "Run",
+          "sourceClipName": "Walking",
+          "durationSec": 0.633,
+          "loop": "repeat",
+          "tags": [
+            "locomotion",
+            "run"
+          ]
+        }
+      ],
+      "defaults": {
+        "defaultAnimationId": "idle",
+        "crossFadeSec": 0.2
+      },
+      "rig": {
+        "nodeCount": 26,
+        "skinCount": 1,
+        "animationCountInAnimationsGLB": 3
+      }
+    },
+    "bartender": {
+      "id": "bartender",
+      "displayName": "Bartender",
+      "skeleton": {
+        "url": "/assets/glb/bartender/bartender_skeleton.glb",
+        "bindPose": {
+          "id": "bind_pose",
+          "displayName": "Bind Pose",
+          "sourceClipName": "Armature|clip0|baselayer",
+          "durationSec": 0.033,
+          "loop": "once",
+          "notes": "Very short clip; likely exporter pose/artifact."
+        }
+      },
+      "animationSource": {
+        "url": "/assets/glb/bartender/bartender_animations.glb"
+      },
+      "animations": [
+        {
+          "id": "idle",
+          "displayName": "Idle",
+          "sourceClipName": "Stand_Talking_Angry",
+          "durationSec": 13.967,
+          "loop": "repeat",
+          "tags": ["idle"]
+        },
+        {
+          "id": "run",
+          "displayName": "Run",
+          "sourceClipName": "Walking",
+          "durationSec": 0.633,
+          "loop": "repeat",
+          "tags": ["locomotion", "run"]
+        },
+        {
+          "id": "talk",
+          "displayName": "Talk",
+          "sourceClipName": "Idle_4",
+          "durationSec": 20.800,
+          "loop": "once",
+          "tags": ["emote", "talk"]
+        },
+        {
+          "id": "walk",
+          "displayName": "Walk",
+          "sourceClipName": "Running",
+          "durationSec": 1.033,
+          "loop": "repeat",
+          "tags": ["locomotion", "walk"]
+        }
+      ],
+      "defaults": {
+        "defaultAnimationId": "idle",
+        "crossFadeSec": 0.2
+      },
+      "rig": {
+        "nodeCount": 26,
+        "skinCount": 1,
+        "animationCountInAnimationsGLB": 4
+      }
+    }
+  }
+}

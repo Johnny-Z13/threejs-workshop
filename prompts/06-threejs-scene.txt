@@ -1,0 +1,8 @@
+create me a threejs scene with the loaded pirate character
+  I want this to have an orbit camera and then I want buttons to switch between the different animation
+  states.
+  Make sure that this is touch control friendly.
+  LMB / Single Touch - Rotate
+  Scroll wheel / Pinch to zoom - Zoom
+  RMB / Two fingers - Pan
+   Use $threejs-capacitor-ios  to make sure it can be deployed on mobile.

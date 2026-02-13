@@ -1,0 +1,4 @@
+## Nano Bana Pro
+<image of pirate>
+Given this 3D pirate, create a background image that can serve as a pre-rendered scene in the correct style and shading for my 3d character to walk around in like in a game using 2.5D techniques. 
+16:9 resolution.

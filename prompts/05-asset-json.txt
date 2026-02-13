@@ -1,0 +1,4 @@
+Study the pirate asset in public/assets/glb/pirate/pirate_skeleton.glb  and the
+  animations in public/assets/glb/pirate/pirate_animations.glb .
+  Firstly, create an asset index json file that will clearly lay out the models animations and state so
+  that it can be easily imported into a threejs scene.

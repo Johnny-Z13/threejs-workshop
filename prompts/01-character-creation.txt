@@ -1,0 +1,7 @@
+# Gemini 3.0 Thinking
+
+Study https://ai.google.dev/gemini-api/docs/image-generation
+
+Especially prompting guide.
+
+I want to create a 3D character, say a whimsical cartoonish pirate, in a t pose so that I can then pass to an image-to-3d software.

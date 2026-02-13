@@ -1,0 +1,11 @@
+# Gemini 3.0 
+<portrait image of pirate>
+For this guy describe the kind of voice he will have.
+
+---
+
+Give full prompt
+
+--- 
+
+> A youthful, high-energy tenor voice for a whimsical 3D pirate character. The tone is bright, optimistic, and full of sprightly bravado, yet carries a touch of endearing clumsiness. The accent is a soft, melodic West Country (Cornish) lilt—reminiscent of a classic point-and-click adventure protagonist. The texture is mostly clear with a very subtle, playful rasp when he tries to sound tough. Delivery should be theatrical and rhythmic, featuring occasional pitch-cracks or 'excited squeaks' when the character is startled or enthusiastic. Avoid deep, gravelly, or menacing tones; maintain a friendly, adventurous spirit throughout.
