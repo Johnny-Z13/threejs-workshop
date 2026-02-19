@@ -115,3 +115,7 @@ body.fullscreen-mode #viewport {
   top: 0;
   bottom: 0;
 }
+
+body.fullscreen-mode {
+  cursor: none;
+}

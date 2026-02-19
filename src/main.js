@@ -315,6 +315,14 @@ class App {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       document.body.classList.add('fullscreen-mode');
+
+      // Any key or click exits fullscreen
+      const exitOnInput = (e) => {
+        if (!document.fullscreenElement) return;
+        document.exitFullscreen();
+      };
+      document.addEventListener('keydown', exitOnInput, { once: true });
+      document.addEventListener('mousedown', exitOnInput, { once: true });
     } else {
       document.exitFullscreen();
     }
