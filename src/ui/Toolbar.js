@@ -54,7 +54,7 @@ export class Toolbar {
     btnEdit.addEventListener('click', () => {
       document.body.classList.toggle('delete-mode');
       btnEdit.classList.toggle('active');
-      btnEdit.textContent = document.body.classList.contains('delete-mode') ? '\u2702 DONE' : '\u2702 EDIT';
+      btnEdit.textContent = document.body.classList.contains('delete-mode') ? 'DONE' : 'DELETE';
     });
 
     // Fix Materials
@@ -101,7 +101,7 @@ export class Toolbar {
     const btnExport = document.getElementById('btn-export');
     btnExport.addEventListener('click', async () => {
       if (!mm.modelRef) return;
-      btnExport.textContent = 'Exporting...';
+      btnExport.textContent = 'EXPORTING...';
       btnExport.style.pointerEvents = 'none';
       try {
         await exportGLB(mm.modelRef, am.allAnimations, mm.loadedFileName);
@@ -110,7 +110,7 @@ export class Toolbar {
         console.error('Export failed:', err);
         toast.show('Export failed \u2014 see console');
       }
-      btnExport.textContent = 'Export GLB';
+      btnExport.textContent = 'EXPORT';
       btnExport.style.pointerEvents = '';
     });
   }

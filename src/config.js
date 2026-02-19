@@ -5,7 +5,7 @@
 export const CONFIG = {
   // Model display
   MODEL_SIZE: 1.8,          // target height in meters
-  DEFAULT_MODEL: './models/Soldier.glb',
+  DEFAULT_MODEL: './models/Grandmother_Moss.glb',
 
   // Renderer settings
   TONE_MAPPING_EXPOSURE: 1.2,

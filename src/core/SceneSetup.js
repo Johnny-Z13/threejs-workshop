@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { CONFIG, COLORS, LIGHTING } from '../config.js';
 import { EventBus } from '../utils/EventBus.js';
 
@@ -8,7 +7,7 @@ import { EventBus } from '../utils/EventBus.js';
  */
 export class SceneSetup {
   static FLOOR_MODES = ['studio', 'maya', 'none', 'white'];
-  static BG_MODES = ['studio', 'black', 'hdri', 'white'];
+  static BG_MODES = ['studio', 'black', 'white'];
 
   constructor() {
     // Scene
@@ -50,8 +49,6 @@ export class SceneSetup {
 
     // Background mode state
     this.bgModeIndex = 0;
-    this.hdriTexture = null;
-    this.hdriLoading = false;
 
     // Events
     EventBus.on('floor:cycle', () => this.cycleFloorMode());
@@ -216,45 +213,12 @@ export class SceneSetup {
         this.scene.environment = null;
         this.scene.fog = null;
         break;
-      case 'hdri':
-        this.scene.fog = null;
-        this.loadHDRI();
-        break;
       case 'white':
         this.scene.background = new THREE.Color(0xffffff);
         this.scene.environment = null;
         this.scene.fog = null;
         break;
     }
-  }
-
-  loadHDRI() {
-    // Already loaded — apply immediately
-    if (this.hdriTexture) {
-      this.scene.background = this.hdriTexture;
-      this.scene.environment = this.hdriTexture;
-      return;
-    }
-    // Already loading — wait for callback
-    if (this.hdriLoading) return;
-
-    this.hdriLoading = true;
-    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    pmremGenerator.compileEquirectangularShader();
-
-    new RGBELoader()
-      .load('https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloofendal_48d_partly_cloudy_1k.hdr', (texture) => {
-        this.hdriTexture = pmremGenerator.fromEquirectangular(texture).texture;
-        texture.dispose();
-        pmremGenerator.dispose();
-        this.hdriLoading = false;
-
-        // Only apply if still in HDRI mode
-        if (SceneSetup.BG_MODES[this.bgModeIndex] === 'hdri') {
-          this.scene.background = this.hdriTexture;
-          this.scene.environment = this.hdriTexture;
-        }
-      });
   }
 
   appendTo(container) {

@@ -158,7 +158,8 @@ class App {
   async loadDefault() {
     try {
       const gltf = await loadGLBFromURL(CONFIG.DEFAULT_MODEL);
-      this.setupModelAndAnims(gltf.scene, gltf.animations, 'Soldier');
+      const name = CONFIG.DEFAULT_MODEL.split('/').pop().replace(/\.glb$/i, '');
+      this.setupModelAndAnims(gltf.scene, gltf.animations, name);
     } catch (err) {
       console.error('Failed to load default model:', err);
     }
@@ -207,7 +208,7 @@ class App {
     document.body.classList.remove('delete-mode');
     const btnEdit = document.getElementById('btn-edit');
     btnEdit.classList.remove('active');
-    btnEdit.textContent = '\u2702 EDIT';
+    btnEdit.textContent = 'DELETE';
     this.updateInfo();
   }
 

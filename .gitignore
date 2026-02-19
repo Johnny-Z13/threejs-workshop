@@ -7,8 +7,8 @@ models/Sable/
 models/pocoyo/
 models/the_collector/
 
-# Keep the test model
-!models/Soldier.glb
+# Keep bundled model
+!models/Grandmother_Moss.glb
 
 # IDE / OS
 .DS_Store
