@@ -31,8 +31,13 @@ export class LightingController {
       }
     };
 
+    this.rotation = 0;
+    this.basePositions = {};
+    this.captureBasePositions();
+
     EventBus.on('lighting:preset', (presetId) => this.applyPreset(presetId));
     EventBus.on('lighting:setIntensity', (lightName, intensity) => this.setLightIntensity(lightName, intensity));
+    EventBus.on('lighting:setRotation', (angle) => this.setRotation(angle));
   }
 
   applyPreset(presetId) {
@@ -40,6 +45,8 @@ export class LightingController {
     if (!preset) return;
     this.currentPreset = presetId;
     preset.setup();
+    this.captureBasePositions();
+    this.rotation = 0;
     EventBus.emit('lighting:changed', presetId);
   }
 
@@ -85,6 +92,29 @@ export class LightingController {
     this.lights.rim.position.set(4, 6, -10);
     this.lights.ambient.intensity = 0.5;
     this.lights.hemi.intensity = 0.8;
+  }
+
+  captureBasePositions() {
+    for (const name of ['key', 'fill', 'rim']) {
+      const pos = this.lights[name].position;
+      this.basePositions[name] = { x: pos.x, y: pos.y, z: pos.z };
+    }
+  }
+
+  setRotation(angle) {
+    this.rotation = angle;
+    for (const name of ['key', 'fill', 'rim']) {
+      const base = this.basePositions[name];
+      if (!base) continue;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      this.lights[name].position.x = base.x * cos - base.z * sin;
+      this.lights[name].position.z = base.x * sin + base.z * cos;
+    }
+  }
+
+  getRotation() {
+    return this.rotation;
   }
 
   setLightIntensity(lightName, intensity) {

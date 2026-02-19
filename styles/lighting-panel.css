@@ -49,6 +49,55 @@
   color: var(--accent);
 }
 
+/* Light Rotation Dial */
+.light-dial-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.light-dial {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  position: relative;
+  cursor: grab;
+  background: var(--bg-tertiary);
+  transition: border-color 0.15s;
+}
+
+.light-dial:hover {
+  border-color: var(--accent);
+}
+
+.light-dial.grabbing {
+  cursor: grabbing;
+  border-color: var(--accent);
+}
+
+.light-dial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -4px;
+  margin-left: -4px;
+  transform: translate(0px, -24px);
+  pointer-events: none;
+}
+
+.light-dial-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
 /* Light Sliders */
 .light-slider {
   width: calc(100% - 40px);
