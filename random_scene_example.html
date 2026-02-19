@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Showcase</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.4);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 13px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">drag to orbit · scroll to zoom · move mouse</div>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ── Scene ───────────────────────────────────────────
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a14);
+
+        const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+        camera.position.set(0, 2.5, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.04;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+
+        // ── Mouse ───────────────────────────────────────────
+        const mouse = { x: 0, y: 0 };
+        addEventListener('mousemove', e => {
+            mouse.x = (e.clientX / innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+        });
+
+        // ── Lights ──────────────────────────────────────────
+        scene.add(new THREE.AmbientLight(0x555577, 1.5));
+
+        const sun = new THREE.DirectionalLight(0xffeedd, 2.5);
+        sun.position.set(5, 8, 4);
+        scene.add(sun);
+
+        const pinkLight = new THREE.PointLight(0xff3366, 20, 30);
+        pinkLight.position.set(-4, 2, -3);
+        scene.add(pinkLight);
+
+        const blueLight = new THREE.PointLight(0x3366ff, 20, 30);
+        blueLight.position.set(4, -1, 3);
+        scene.add(blueLight);
+
+        const greenLight = new THREE.PointLight(0x33ffaa, 12, 25);
+        greenLight.position.set(0, 5, -4);
+        scene.add(greenLight);
+
+        // ── Central torusknot ───────────────────────────────
+        const knot = new THREE.Mesh(
+            new THREE.TorusKnotGeometry(1.2, 0.35, 128, 32),
+            new THREE.MeshStandardMaterial({
+                color: 0xaa55ee,
+                emissive: 0x440066,
+                emissiveIntensity: 1.0,
+                metalness: 0.6,
+                roughness: 0.25,
+            })
+        );
+        scene.add(knot);
+
+        // ── Orbital rings ───────────────────────────────────
+        const rings = [];
+        const ringGeom = new THREE.TorusGeometry(1, 0.02, 8, 120);
+        for (let i = 0; i < 5; i++) {
+            const hue = 0.8 + (i / 5) * 0.35;
+            const ring = new THREE.Mesh(ringGeom, new THREE.MeshStandardMaterial({
+                color: new THREE.Color().setHSL(hue, 0.9, 0.55),
+                emissive: new THREE.Color().setHSL(hue, 1, 0.3),
+            }));
+            const s = 2.0 + i * 0.55;
+            ring.scale.set(s, s, s);
+            ring.rotation.set(Math.PI * 0.3 + i * 0.4, i * 0.7, 0);
+            rings.push(ring);
+            scene.add(ring);
+        }
+
+        // ── Floating shapes ─────────────────────────────────
+        const floaters = [];
+        const icoG = new THREE.IcosahedronGeometry(0.15, 0);
+        const octG = new THREE.OctahedronGeometry(0.12, 0);
+        for (let i = 0; i < 30; i++) {
+            const t = i / 30;
+            const geo = i % 3 === 0 ? octG : icoG;
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+                color: new THREE.Color().setHSL(t, 0.7, 0.5),
+                emissive: new THREE.Color().setHSL(t, 0.9, 0.2),
+                flatShading: true,
+            }));
+            const r = 3 + Math.random() * 7;
+            const a = Math.random() * Math.PI * 2;
+            mesh.position.set(Math.cos(a) * r, (Math.random() - 0.5) * 5, Math.sin(a) * r);
+            mesh.userData = {
+                base: mesh.position.clone(),
+                spd: 0.3 + Math.random() * 0.8,
+                amp: 0.3 + Math.random() * 0.5,
+                ph: Math.random() * Math.PI * 2,
+                orbit: (Math.random() - 0.5) * 0.15,
+            };
+            floaters.push(mesh);
+            scene.add(mesh);
+        }
+
+        // ── Glowing spheres ─────────────────────────────────
+        const sphereG = new THREE.SphereGeometry(0.5, 32, 16);
+        const sphere1 = new THREE.Mesh(sphereG, new THREE.MeshStandardMaterial({
+            color: 0x66bbff, emissive: 0x2255cc, emissiveIntensity: 2,
+            transparent: true, opacity: 0.85,
+        }));
+        sphere1.position.set(3, 1.5, -2);
+        scene.add(sphere1);
+
+        const sphere2 = new THREE.Mesh(sphereG, new THREE.MeshStandardMaterial({
+            color: 0xff8844, emissive: 0xcc4411, emissiveIntensity: 2,
+            transparent: true, opacity: 0.85,
+        }));
+        sphere2.position.set(-3, -0.5, 2);
+        scene.add(sphere2);
+
+        // ── Particles ───────────────────────────────────────
+        const pCount = 1200;
+        const pPos = new Float32Array(pCount * 3);
+        const pCol = new Float32Array(pCount * 3);
+        for (let i = 0; i < pCount; i++) {
+            const i3 = i * 3;
+            const r = 4 + Math.random() * 18;
+            const th = Math.random() * Math.PI * 2;
+            const ph = Math.acos(2 * Math.random() - 1);
+            pPos[i3] = r * Math.sin(ph) * Math.cos(th);
+            pPos[i3+1] = r * Math.sin(ph) * Math.sin(th);
+            pPos[i3+2] = r * Math.cos(ph);
+            const c = new THREE.Color().setHSL(0.55 + Math.random() * 0.4, 0.5 + Math.random() * 0.5, 0.6 + Math.random() * 0.3);
+            pCol[i3] = c.r; pCol[i3+1] = c.g; pCol[i3+2] = c.b;
+        }
+        const pGeo = new THREE.BufferGeometry();
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+        const pts = new THREE.Points(pGeo, new THREE.PointsMaterial({
+            size: 0.06, vertexColors: true, transparent: true, opacity: 0.9, sizeAttenuation: true,
+        }));
+        scene.add(pts);
+
+        // ── Grid floor ──────────────────────────────────────
+        const grid = new THREE.GridHelper(40, 40, 0x444466, 0x222233);
+        grid.position.y = -3;
+        scene.add(grid);
+
+        // ── Animate ─────────────────────────────────────────
+        renderer.setAnimationLoop((time) => {
+            const t = time * 0.001;
+
+            knot.rotation.x = t * 0.3 + mouse.y * 0.4;
+            knot.rotation.y = t * 0.2 + mouse.x * 0.4;
+            knot.rotation.z = t * 0.1;
+            knot.material.emissiveIntensity = 0.5 + Math.sqrt(mouse.x ** 2 + mouse.y ** 2) * 1.5;
+
+            rings.forEach((r, i) => {
+                r.rotation.x = Math.PI * 0.3 + i * 0.4 + t * (0.15 + i * 0.05);
+                r.rotation.z = t * (0.1 + i * 0.03);
+            });
+
+            floaters.forEach(f => {
+                const d = f.userData;
+                f.position.y = d.base.y + Math.sin(t * d.spd + d.ph) * d.amp;
+                f.rotation.x = t * d.spd * 0.5;
+                f.rotation.y = t * d.spd * 0.3;
+                const ang = Math.atan2(d.base.z, d.base.x) + t * d.orbit;
+                const rad = Math.sqrt(d.base.x ** 2 + d.base.z ** 2);
+                f.position.x = Math.cos(ang) * rad;
+                f.position.z = Math.sin(ang) * rad;
+            });
+
+            sphere1.position.y = 1.5 + Math.sin(t * 0.8) * 0.5;
+            sphere2.position.y = -0.5 + Math.sin(t * 0.6 + 1.5) * 0.5;
+
+            pinkLight.position.set(Math.sin(t * 0.5) * 5, 2, Math.cos(t * 0.5) * 5);
+            blueLight.position.set(Math.cos(t * 0.3) * 6, -1, Math.sin(t * 0.4) * 4);
+            greenLight.position.y = 4 + Math.sin(t * 0.6) * 2;
+
+            pts.rotation.y = t * 0.02;
+
+            controls.update();
+            renderer.render(scene, camera);
+        });
+
+        // ── Resize ──────────────────────────────────────────
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+    </script>
+</body>
+</html>

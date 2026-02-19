@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; font-family: 'Segoe UI', system-ui, sans-serif; }
+        canvas { display: block; }
+
+        /* UI overlay — animation buttons */
+        #ui {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 90vw;
+        }
+        #ui button {
+            padding: 8px 18px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            background: rgba(10,10,20,0.7);
+            color: rgba(255,255,255,0.7);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+        #ui button:hover {
+            background: rgba(30,30,50,0.8);
+            color: #fff;
+            border-color: rgba(255,255,255,0.3);
+        }
+        #ui button.active {
+            background: rgba(100,160,255,0.25);
+            color: #fff;
+            border-color: rgba(100,160,255,0.5);
+        }
+
+        /* Model info */
+        #info {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            color: rgba(255,255,255,0.35);
+            font-size: 12px;
+            line-height: 1.6;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Hint */
+        #hint {
+            position: fixed;
+            top: 52px;
+            right: 16px;
+            color: rgba(255,255,255,0.25);
+            font-size: 11px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Toolbar */
+        #toolbar {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 20;
+        }
+        #toolbar button {
+            padding: 7px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            background: rgba(10,10,20,0.7);
+            color: rgba(255,255,255,0.7);
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        #toolbar button:hover {
+            background: rgba(30,30,50,0.8);
+            color: #fff;
+            border-color: rgba(255,255,255,0.3);
+        }
+        #toolbar button.active {
+            background: rgba(255,80,80,0.25);
+            color: #ff8888;
+            border-color: rgba(255,80,80,0.5);
+        }
+        #btn-export {
+            background: rgba(60,180,100,0.2) !important;
+            color: rgba(100,220,140,0.9) !important;
+            border-color: rgba(60,180,100,0.3) !important;
+        }
+        #btn-export:hover {
+            background: rgba(60,180,100,0.35) !important;
+            color: #fff !important;
+        }
+        #btn-fix-mats {
+            background: rgba(140,120,255,0.2) !important;
+            color: rgba(170,150,255,0.9) !important;
+            border-color: rgba(140,120,255,0.3) !important;
+        }
+        #btn-fix-mats:hover {
+            background: rgba(140,120,255,0.35) !important;
+            color: #fff !important;
+        }
+        #btn-flip-normals {
+            background: rgba(80,200,200,0.2) !important;
+            color: rgba(100,220,220,0.9) !important;
+            border-color: rgba(80,200,200,0.3) !important;
+        }
+        #btn-flip-normals:hover {
+            background: rgba(80,200,200,0.35) !important;
+            color: #fff !important;
+        }
+        #btn-detox {
+            background: rgba(255,160,40,0.2) !important;
+            color: rgba(255,190,80,0.9) !important;
+            border-color: rgba(255,160,40,0.3) !important;
+        }
+        #btn-detox:hover {
+            background: rgba(255,160,40,0.35) !important;
+            color: #fff !important;
+        }
+
+        /* Delete badge on anim buttons */
+        #ui button {
+            position: relative;
+        }
+        #ui button .delete-badge {
+            display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(255,60,60,0.85);
+            color: #fff;
+            font-size: 11px;
+            line-height: 18px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            font-family: inherit;
+        }
+        body.delete-mode #ui button .delete-badge {
+            display: block;
+        }
+        body.delete-mode #ui button .delete-badge:hover {
+            background: rgba(255,30,30,1);
+            transform: scale(1.15);
+        }
+
+        /* Inline confirm dialog */
+        #confirm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        #confirm-overlay.visible {
+            display: flex;
+        }
+        #confirm-dialog {
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 24px 28px;
+            text-align: center;
+            max-width: 380px;
+        }
+        #confirm-dialog p {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+        #confirm-dialog .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        #confirm-dialog button {
+            padding: 7px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(30,30,50,0.8);
+            color: rgba(255,255,255,0.7);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        #confirm-dialog button:hover {
+            color: #fff;
+        }
+        #confirm-dialog .btn-confirm {
+            background: rgba(255,60,60,0.3);
+            color: #ff8888;
+            border-color: rgba(255,60,60,0.4);
+        }
+        #confirm-dialog .btn-confirm:hover {
+            background: rgba(255,60,60,0.5);
+            color: #fff;
+        }
+        #confirm-dialog .btn-confirm.detox {
+            background: rgba(255,160,40,0.3);
+            color: rgba(255,190,80,1);
+            border-color: rgba(255,160,40,0.4);
+        }
+        #confirm-dialog .btn-confirm.detox:hover {
+            background: rgba(255,160,40,0.5);
+            color: #fff;
+        }
+
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            padding: 10px 24px;
+            border-radius: 20px;
+            background: rgba(10,10,20,0.9);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.8);
+            font-size: 13px;
+            font-family: inherit;
+            backdrop-filter: blur(10px);
+            z-index: 30;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- UI -->
+    <div id="ui" style="display:none;"></div>
+    <div id="info"></div>
+    <div id="toolbar">
+        <button id="btn-open" title="Open a GLB file">Open</button>
+        <button id="btn-add-anims" title="Merge animations from another GLB">+ Anims</button>
+        <button id="btn-edit" title="Toggle delete mode">&#9986; Edit</button>
+        <button id="btn-fix-mats" title="Fix materials: set single-sided">Fix Mats</button>
+        <button id="btn-flip-normals" title="Flip normal map Y channel (OpenGL ↔ DirectX)">Flip Normal Y</button>
+        <button id="btn-detox" title="Meshy Detox: fix scale, remove junk clips">Detox</button>
+        <button id="btn-export" title="Export combined GLB">Export GLB</button>
+    </div>
+    <div id="hint">drag to orbit &middot; scroll to zoom</div>
+    <div id="toast"></div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="file-input" accept=".glb" hidden>
+    <input type="file" id="anim-file-input" accept=".glb" hidden>
+
+    <!-- Confirm dialog (reused for delete + detox) -->
+    <div id="confirm-overlay">
+        <div id="confirm-dialog">
+            <p id="confirm-msg">Delete this animation?</p>
+            <div class="btn-row">
+                <button class="btn-cancel">Cancel</button>
+                <button class="btn-confirm">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ── Config ───────────────────────────────────────────
+        const MODEL_SIZE = 1.8;  // target height in meters
+        const DEFAULT_MODEL = './models/Soldier.glb';
+
+        // ── Scene ────────────────────────────────────────────
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+        scene.fog = new THREE.Fog(0x1a1a2e, 8, 25);
+
+        const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
+        camera.position.set(0, 1.0, 3);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        document.body.appendChild(renderer.domElement);
+
+        // ── Controls ─────────────────────────────────────────
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 1, 0);
+        controls.minDistance = 0.5;
+        controls.maxDistance = 10;
+        controls.maxPolarAngle = Math.PI * 0.85;
+
+        // ── Lights ───────────────────────────────────────────
+        scene.add(new THREE.AmbientLight(0x8899bb, 0.6));
+
+        const mainLight = new THREE.DirectionalLight(0xffeedd, 2.0);
+        mainLight.position.set(3, 6, 4);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 20;
+        mainLight.shadow.camera.left = -4;
+        mainLight.shadow.camera.right = 4;
+        mainLight.shadow.camera.top = 4;
+        mainLight.shadow.camera.bottom = -1;
+        mainLight.shadow.bias = -0.001;
+        scene.add(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(0x88bbff, 0.5);
+        fillLight.position.set(-3, 2, -2);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        rimLight.position.set(0, 3, -5);
+        scene.add(rimLight);
+
+        // ── Ground ───────────────────────────────────────────
+        const groundGeo = new THREE.CircleGeometry(6, 64);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color: 0x222233, roughness: 0.9, metalness: 0.0,
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const grid = new THREE.GridHelper(20, 20, 0x333355, 0x252540);
+        grid.position.y = 0.001;
+        scene.add(grid);
+
+        // ── Geometry sanitization ────────────────────────────
+        // Fixes corrupt tangents, bad normals, and degenerate triangles
+        // from Meshy.ai and other exporters.
+        function sanitizeGeometry(model) {
+            let strippedTangents = 0;
+            let recomputedNormals = 0;
+
+            model.traverse((child) => {
+                if (!child.isMesh || !child.geometry) return;
+                const geo = child.geometry;
+
+                // Log material info for debugging
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach((m, i) => {
+                    console.log(`[sanitize] ${child.name} mat[${i}]: type=${m.type} side=${m.side} alphaMode=${m.alphaMode ?? m.transparent ? 'BLEND' : 'OPAQUE'} normalMap=${!!m.normalMap} map=${!!m.map}`);
+                });
+
+                // Log geometry attributes
+                const attrs = Object.keys(geo.attributes);
+                console.log(`[sanitize] ${child.name} geo: ${geo.attributes.position.count} verts, attrs=[${attrs.join(',')}], skinned=${child.isSkinnedMesh}`);
+
+                // 1. Strip tangents — let Three.js derive from normal maps
+                if (geo.hasAttribute('tangent')) {
+                    geo.deleteAttribute('tangent');
+                    strippedTangents++;
+                }
+
+                // 2. Recompute normals if broken (NaN or zero-length)
+                if (geo.hasAttribute('normal')) {
+                    const arr = geo.getAttribute('normal').array;
+                    let bad = 0;
+                    for (let i = 0; i < arr.length; i += 3) {
+                        const len = Math.sqrt(arr[i]*arr[i] + arr[i+1]*arr[i+1] + arr[i+2]*arr[i+2]);
+                        if (isNaN(len) || len < 0.001) bad++;
+                    }
+                    if (bad > 0) {
+                        geo.computeVertexNormals();
+                        recomputedNormals++;
+                        console.log(`[sanitize] ${child.name}: recomputed normals (${bad} bad of ${arr.length / 3})`);
+                    }
+                } else {
+                    geo.computeVertexNormals();
+                    recomputedNormals++;
+                }
+
+                // 3. Flag materials for shader recompile
+                mats.forEach(m => { m.needsUpdate = true; });
+            });
+
+            const report = [];
+            if (strippedTangents > 0) report.push(`stripped ${strippedTangents} tangent attr`);
+            if (recomputedNormals > 0) report.push(`recomputed ${recomputedNormals} normals`);
+            if (report.length > 0) console.log(`[sanitize] ${report.join(', ')}`);
+            return report;
+        }
+
+        // ── Model normalization ──────────────────────────────
+        // Uses Box3.setFromObject which correctly handles SkinnedMesh
+        // (computes bounds from actual skinned vertex positions, not
+        // the un-deformed geometry bounding box which can be wildly
+        // different for skinned characters).
+        function normalizeModel(model, targetSize) {
+            model.position.set(0, 0, 0);
+            model.rotation.set(0, 0, 0);
+            model.scale.set(1, 1, 1);
+            model.updateMatrixWorld(true);
+
+            const box = new THREE.Box3().setFromObject(model);
+            if (box.isEmpty()) return model;
+
+            const size = box.getSize(new THREE.Vector3());
+            const height = size.y || Math.max(size.x, size.y, size.z);
+            const scale = targetSize / height;
+
+            console.log(`[normalize] measured height=${height.toFixed(4)}, scale=${scale.toFixed(4)}`);
+
+            model.scale.setScalar(scale);
+            model.updateMatrixWorld(true);
+
+            const scaledBox = new THREE.Box3().setFromObject(model);
+            model.position.y = -scaledBox.min.y;
+            return model;
+        }
+
+        // ── Animation state ──────────────────────────────────
+        let mixer = null;
+        const actions = {};
+        let activeAction = null;
+        const clock = new THREE.Clock();
+        let allAnimations = [];
+        let modelRef = null;
+        let loadedFileName = '';
+
+        function switchAnimation(name) {
+            if (!actions[name] || actions[name] === activeAction) return;
+            const prevAction = activeAction;
+            activeAction = actions[name];
+            if (prevAction) prevAction.fadeOut(0.3);
+            activeAction.reset().fadeIn(0.3).play();
+            document.querySelectorAll('#ui button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.anim === name);
+            });
+        }
+
+        // ── DOM refs ─────────────────────────────────────────
+        const loader = new GLTFLoader();
+        const uiEl = document.getElementById('ui');
+        const infoEl = document.getElementById('info');
+        const fileInput = document.getElementById('file-input');
+        const animFileInput = document.getElementById('anim-file-input');
+        const toastEl = document.getElementById('toast');
+
+        const btnOpen = document.getElementById('btn-open');
+        const btnAddAnims = document.getElementById('btn-add-anims');
+        const btnEdit = document.getElementById('btn-edit');
+        const btnFixMats = document.getElementById('btn-fix-mats');
+        const btnFlipNormals = document.getElementById('btn-flip-normals');
+        const btnDetox = document.getElementById('btn-detox');
+        const btnExport = document.getElementById('btn-export');
+        const confirmOverlay = document.getElementById('confirm-overlay');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnConfirmAction = confirmOverlay.querySelector('.btn-confirm');
+        const btnConfirmCancel = confirmOverlay.querySelector('.btn-cancel');
+
+        let deleteTarget = null;
+        let pendingConfirmAction = null; // generic confirm callback
+
+        // ── Toast ────────────────────────────────────────────
+        let toastTimer = null;
+        function showToast(msg, durationMs = 2500) {
+            toastEl.textContent = msg;
+            toastEl.classList.add('visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toastEl.classList.remove('visible'), durationMs);
+        }
+
+        // ── GLB helpers ──────────────────────────────────────
+        function parseGLB(arrayBuffer) {
+            return new Promise((resolve, reject) => {
+                loader.parse(arrayBuffer, '', resolve, reject);
+            });
+        }
+
+        function loadGLBFromURL(url) {
+            return new Promise((resolve, reject) => {
+                loader.load(url, resolve, undefined, reject);
+            });
+        }
+
+        // ── Clear current model ──────────────────────────────
+        function clearModel() {
+            if (modelRef) {
+                scene.remove(modelRef);
+                modelRef.traverse((child) => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        const mats = Array.isArray(child.material) ? child.material : [child.material];
+                        mats.forEach(m => {
+                            m.map?.dispose();
+                            m.normalMap?.dispose();
+                            m.roughnessMap?.dispose();
+                            m.metalnessMap?.dispose();
+                            m.emissiveMap?.dispose();
+                            m.dispose();
+                        });
+                    }
+                });
+                modelRef = null;
+            }
+            if (mixer) {
+                mixer.stopAllAction();
+                mixer.uncacheRoot(mixer.getRoot());
+                mixer = null;
+            }
+            for (const key of Object.keys(actions)) delete actions[key];
+            activeAction = null;
+            allAnimations = [];
+            loadedFileName = '';
+            uiEl.innerHTML = '';
+            uiEl.style.display = 'none';
+            infoEl.innerHTML = '';
+            document.body.classList.remove('delete-mode');
+            btnEdit.classList.remove('active');
+            btnEdit.textContent = '✂ Edit';
+        }
+
+        // ── Setup model in scene ─────────────────────────────
+        function setupModel(model, animations, name) {
+            modelRef = model;
+            loadedFileName = name;
+
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Sanitize geometry before anything else — strips bad tangents,
+            // fixes normals. Must happen before normalizeModel.
+            sanitizeGeometry(model);
+
+            model.updateMatrixWorld(true);
+            normalizeModel(model, MODEL_SIZE);
+            scene.add(model);
+
+            allAnimations = [...animations];
+            setupAnimations();
+            updateInfo();
+        }
+
+        function setupAnimations() {
+            // Clear old actions
+            for (const key of Object.keys(actions)) delete actions[key];
+            activeAction = null;
+            uiEl.innerHTML = '';
+
+            if (allAnimations.length === 0 || !modelRef) {
+                uiEl.style.display = 'none';
+                return;
+            }
+
+            mixer = new THREE.AnimationMixer(modelRef);
+            allAnimations.forEach((clip) => {
+                actions[clip.name] = mixer.clipAction(clip);
+            });
+
+            buildAnimButtons();
+
+            const animNames = Object.keys(actions);
+            if (animNames.length > 0) switchAnimation(animNames[0]);
+            uiEl.style.display = 'flex';
+        }
+
+        function buildAnimButtons() {
+            uiEl.innerHTML = '';
+            Object.keys(actions).forEach((name) => {
+                const btn = document.createElement('button');
+                btn.dataset.anim = name;
+
+                const label = document.createElement('span');
+                label.textContent = name;
+                btn.appendChild(label);
+
+                const badge = document.createElement('span');
+                badge.className = 'delete-badge';
+                badge.textContent = '×';
+                badge.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showDeleteConfirm(name, btn);
+                });
+                btn.appendChild(badge);
+
+                btn.addEventListener('click', () => switchAnimation(name));
+                uiEl.appendChild(btn);
+            });
+        }
+
+        function updateInfo() {
+            if (!modelRef) { infoEl.innerHTML = ''; return; }
+            let meshCount = 0, vertCount = 0;
+            modelRef.traverse((child) => {
+                if (child.isMesh) {
+                    meshCount++;
+                    vertCount += child.geometry.attributes.position.count;
+                }
+            });
+            infoEl.innerHTML = [
+                loadedFileName,
+                `${meshCount} meshes &middot; ${vertCount.toLocaleString()} verts`,
+                `${allAnimations.length} animations`,
+            ].join('<br>');
+        }
+
+        // ── Load from file (Open button) ─────────────────────
+        async function loadFromFile(file) {
+            clearModel();
+            const name = file.name.replace(/\.glb$/i, '');
+            try {
+                const buffer = await file.arrayBuffer();
+                const gltf = await parseGLB(buffer);
+                setupModel(gltf.scene, gltf.animations, name);
+                showToast(`Loaded ${name}`);
+            } catch (err) {
+                console.error('Failed to load GLB:', err);
+                showToast('Failed to load GLB');
+            }
+        }
+
+        // ── Load default model on startup ────────────────────
+        async function loadDefault() {
+            try {
+                const gltf = await loadGLBFromURL(DEFAULT_MODEL);
+                setupModel(gltf.scene, gltf.animations, 'Soldier');
+            } catch (err) {
+                console.error('Failed to load default model:', err);
+                infoEl.innerHTML = 'Could not load default model';
+            }
+        }
+
+        // ── Merge animations from another GLB ────────────────
+        async function mergeAnimsFromFile(file) {
+            if (!modelRef) {
+                showToast('Load a model first');
+                return;
+            }
+            try {
+                const buffer = await file.arrayBuffer();
+                const gltf = await parseGLB(buffer);
+                const newClips = gltf.animations;
+                if (newClips.length === 0) {
+                    showToast('No animations found in that file');
+                    return;
+                }
+
+                // Stop current mixer, merge clips, rebuild
+                if (mixer) {
+                    mixer.stopAllAction();
+                    mixer.uncacheRoot(mixer.getRoot());
+                }
+
+                allAnimations.push(...newClips);
+                setupAnimations();
+                updateInfo();
+                showToast(`Merged ${newClips.length} animation${newClips.length > 1 ? 's' : ''}`);
+            } catch (err) {
+                console.error('Failed to merge animations:', err);
+                showToast('Failed to load animation file');
+            }
+        }
+
+        // ── Meshy Detox ──────────────────────────────────────
+        // Fixes common Meshy.ai GLB export issues:
+        //  1. Scale — normalize to 1.8m height using mesh-only bounds
+        //  2. Grounding — feet at Y=0
+        //  3. Junk clips — remove very short (<0.05s) pose artifacts
+        //  4. Clip name cleanup — strip "Armature|" prefix junk
+        function detoxModel() {
+            if (!modelRef) return;
+
+            const report = [];
+
+            // 1. Sanitize geometry (strip tangents, fix normals)
+            const geoReport = sanitizeGeometry(modelRef);
+            if (geoReport.length > 0) report.push(...geoReport);
+
+            // 2. Re-normalize scale + grounding
+            normalizeModel(modelRef, MODEL_SIZE);
+            report.push(`Normalized to ${MODEL_SIZE}m`);
+
+            // 2. Strip junk animation clips
+            const junkThreshold = 0.05; // seconds
+            const junkClips = allAnimations.filter(c => c.duration < junkThreshold);
+            if (junkClips.length > 0) {
+                junkClips.forEach(clip => {
+                    if (actions[clip.name]) {
+                        actions[clip.name].stop();
+                        mixer.uncacheAction(actions[clip.name].getClip());
+                        mixer.uncacheClip(actions[clip.name].getClip());
+                        delete actions[clip.name];
+                    }
+                    const idx = allAnimations.indexOf(clip);
+                    if (idx !== -1) allAnimations.splice(idx, 1);
+                });
+                report.push(`Removed ${junkClips.length} junk clip${junkClips.length > 1 ? 's' : ''} (<${junkThreshold}s)`);
+            }
+
+            // 3. Clean up clip names — strip common prefixes like "Armature|"
+            let renamed = 0;
+            allAnimations.forEach(clip => {
+                const clean = clip.name
+                    .replace(/^Armature\|/, '')
+                    .replace(/\|baselayer$/i, '')
+                    .trim();
+                if (clean && clean !== clip.name) {
+                    // Update action key
+                    if (actions[clip.name]) {
+                        actions[clean] = actions[clip.name];
+                        delete actions[clip.name];
+                    }
+                    clip.name = clean;
+                    renamed++;
+                }
+            });
+            if (renamed > 0) {
+                report.push(`Renamed ${renamed} clip${renamed > 1 ? 's' : ''}`);
+            }
+
+            // 4. Fix materials: single-sided, kill unnecessary alpha blending
+            let matFixes = 0;
+            let alphaFixes = 0;
+            modelRef.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    mats.forEach(m => {
+                        if (m.side === THREE.DoubleSide) {
+                            m.side = THREE.FrontSide;
+                            matFixes++;
+                        }
+                        // Meshy sets alphaMode BLEND on opaque characters.
+                        // This causes severe Z-sorting artifacts on skinned meshes.
+                        // Switch to alphaTest (cutout) which sorts correctly.
+                        if (m.transparent) {
+                            m.transparent = false;
+                            m.alphaTest = 0.5;
+                            m.depthWrite = true;
+                            m.needsUpdate = true;
+                            alphaFixes++;
+                        }
+                    });
+                }
+            });
+            if (matFixes > 0) {
+                report.push(`Fixed ${matFixes} double-sided material${matFixes > 1 ? 's' : ''}`);
+            }
+            if (alphaFixes > 0) {
+                report.push(`Fixed ${alphaFixes} alpha blend → alpha test`);
+            }
+
+            // Rebuild UI
+            buildAnimButtons();
+            // Re-activate first anim if current was removed
+            if (!activeAction || !actions[activeAction.getClip().name]) {
+                activeAction = null;
+                const remaining = Object.keys(actions);
+                if (remaining.length > 0) switchAnimation(remaining[0]);
+            } else {
+                // Re-highlight active
+                document.querySelectorAll('#ui button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.anim === activeAction?.getClip().name);
+                });
+            }
+            updateInfo();
+
+            const summary = report.join(' · ');
+            showToast(`Detox: ${summary}`, 4000);
+            console.log('Detox report:', report);
+        }
+
+        // ── Confirm dialog (generic) ─────────────────────────
+        function showConfirm(message, actionLabel, styleClass, onConfirm) {
+            confirmMsg.textContent = message;
+            btnConfirmAction.textContent = actionLabel;
+            btnConfirmAction.className = 'btn-confirm' + (styleClass ? ` ${styleClass}` : '');
+            pendingConfirmAction = onConfirm;
+            confirmOverlay.classList.add('visible');
+        }
+
+        function hideConfirm() {
+            confirmOverlay.classList.remove('visible');
+            pendingConfirmAction = null;
+            deleteTarget = null;
+        }
+
+        btnConfirmCancel.addEventListener('click', hideConfirm);
+        confirmOverlay.addEventListener('click', (e) => {
+            if (e.target === confirmOverlay) hideConfirm();
+        });
+        btnConfirmAction.addEventListener('click', () => {
+            if (pendingConfirmAction) pendingConfirmAction();
+            hideConfirm();
+        });
+
+        // ── Delete animation confirm ─────────────────────────
+        function showDeleteConfirm(name, btnEl) {
+            deleteTarget = { name, buttonEl: btnEl };
+            showConfirm(`Delete "${name}"?`, 'Delete', '', () => {
+                if (!deleteTarget) return;
+                const { name, buttonEl } = deleteTarget;
+
+                if (actions[name] === activeAction) {
+                    activeAction.stop();
+                    activeAction = null;
+                }
+                actions[name].stop();
+                mixer.uncacheAction(actions[name].getClip());
+                mixer.uncacheClip(actions[name].getClip());
+                delete actions[name];
+
+                const idx = allAnimations.findIndex(c => c.name === name);
+                if (idx !== -1) allAnimations.splice(idx, 1);
+
+                buttonEl.remove();
+                updateInfo();
+
+                if (!activeAction) {
+                    const remaining = Object.keys(actions);
+                    if (remaining.length > 0) switchAnimation(remaining[0]);
+                }
+            });
+        }
+
+        // ── Toolbar wiring ───────────────────────────────────
+
+        // Open — pick a GLB to replace the current model
+        btnOpen.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                loadFromFile(fileInput.files[0]);
+                fileInput.value = '';
+            }
+        });
+
+        // + Anims — pick a GLB and merge its animations into current model
+        btnAddAnims.addEventListener('click', () => {
+            if (!modelRef) { showToast('Load a model first'); return; }
+            animFileInput.click();
+        });
+        animFileInput.addEventListener('change', () => {
+            if (animFileInput.files.length > 0) {
+                mergeAnimsFromFile(animFileInput.files[0]);
+                animFileInput.value = '';
+            }
+        });
+
+        // Edit (delete mode toggle)
+        btnEdit.addEventListener('click', () => {
+            document.body.classList.toggle('delete-mode');
+            btnEdit.classList.toggle('active');
+            btnEdit.textContent = document.body.classList.contains('delete-mode') ? '✂ Done' : '✂ Edit';
+        });
+
+        // Fix Materials — single-sided + kill bad alpha blend
+        btnFixMats.addEventListener('click', () => {
+            if (!modelRef) { showToast('Load a model first'); return; }
+            let sideFixes = 0, alphaFixes = 0;
+            modelRef.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    mats.forEach(m => {
+                        if (m.side === THREE.DoubleSide) {
+                            m.side = THREE.FrontSide;
+                            sideFixes++;
+                        }
+                        if (m.transparent) {
+                            m.transparent = false;
+                            m.alphaTest = 0.5;
+                            m.depthWrite = true;
+                            alphaFixes++;
+                        }
+                        m.needsUpdate = true;
+                    });
+                }
+            });
+            const msgs = [];
+            if (sideFixes > 0) msgs.push(`${sideFixes} → single-sided`);
+            if (alphaFixes > 0) msgs.push(`${alphaFixes} → alpha test`);
+            showToast(msgs.length > 0 ? `Fixed: ${msgs.join(', ')}` : 'Materials already clean');
+        });
+
+        // Flip Normal Map Y — toggles between OpenGL and DirectX normal format
+        btnFlipNormals.addEventListener('click', () => {
+            if (!modelRef) { showToast('Load a model first'); return; }
+            let flipped = 0;
+            modelRef.traverse((child) => {
+                if (!child.isMesh || !child.material) return;
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach(m => {
+                    if (!m.normalMap) return;
+                    const tex = m.normalMap;
+                    // Flip Y scale: 1 → -1 or -1 → 1
+                    tex.repeat.y = tex.repeat.y > 0 ? -tex.repeat.y : Math.abs(tex.repeat.y);
+                    // When Y is flipped, we need to shift the offset to compensate
+                    tex.offset.y = tex.repeat.y < 0 ? 1 : 0;
+                    tex.needsUpdate = true;
+                    m.needsUpdate = true;
+                    flipped++;
+                });
+            });
+            showToast(flipped > 0 ? `Flipped normal map Y on ${flipped} material${flipped > 1 ? 's' : ''}` : 'No normal maps found');
+        });
+
+        // Detox — with confirmation
+        btnDetox.addEventListener('click', () => {
+            if (!modelRef) { showToast('Load a model first'); return; }
+            showConfirm(
+                'Run Meshy Detox?\nNormalize scale, remove junk clips, clean names, fix materials.',
+                'Detox',
+                'detox',
+                detoxModel
+            );
+        });
+
+        // Export GLB
+        btnExport.addEventListener('click', async () => {
+            if (!modelRef) return;
+            btnExport.textContent = 'Exporting...';
+            btnExport.style.pointerEvents = 'none';
+            try {
+                const exporter = new GLTFExporter();
+                const glb = await exporter.parseAsync(modelRef, {
+                    binary: true,
+                    trs: true,
+                    animations: allAnimations,
+                });
+                const blob = new Blob([glb], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${loadedFileName || 'model'}_Clean.glb`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('Exported!');
+            } catch (err) {
+                console.error('Export failed:', err);
+                showToast('Export failed — see console');
+            }
+            btnExport.textContent = 'Export GLB';
+            btnExport.style.pointerEvents = '';
+        });
+
+        // ── Drag-and-drop anywhere on page ───────────────────
+        document.body.addEventListener('dragover', (e) => e.preventDefault());
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = Array.from(e.dataTransfer.files).filter(f =>
+                f.name.toLowerCase().endsWith('.glb')
+            );
+            if (files.length === 1) {
+                loadFromFile(files[0]);
+            } else if (files.length === 2) {
+                // 2-file drop: first = mesh, second = anims (Meshy split)
+                loadFromFile(files[0]).then(() => mergeAnimsFromFile(files[1]));
+            }
+        });
+
+        // ── Animate ──────────────────────────────────────────
+        renderer.setAnimationLoop(() => {
+            const delta = clock.getDelta();
+            if (mixer) mixer.update(delta);
+            controls.update();
+            renderer.render(scene, camera);
+        });
+
+        // ── Resize ───────────────────────────────────────────
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+
+        // ── Boot ─────────────────────────────────────────────
+        loadDefault();
+    </script>
+</body>
+</html>

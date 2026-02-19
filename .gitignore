@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Models (large binary GLB files — keep in local/cloud storage)
+models/inbox/
+models/Sable/
+models/pocoyo/
+models/the_collector/
+
+# Keep the test model
+!models/Soldier.glb
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Build artifacts
+dist/
