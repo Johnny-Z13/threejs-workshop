@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Viewer</title>
+
+<!-- Stylesheets -->
+<link rel="stylesheet" href="styles/theme.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/camera-panel.css">
+<link rel="stylesheet" href="styles/lighting-panel.css">
+<link rel="stylesheet" href="styles/render-panel.css">
+<link rel="stylesheet" href="styles/presets-panel.css">
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-brand">threejs-workshop / character viewer</div>
+  <div class="topbar-sep"></div>
+  <button class="topbar-nav" id="prevModel" title="Previous model" disabled>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="topbar-file" id="fileName">No file loaded</div>
+  <button class="topbar-nav" id="nextModel" title="Next model" disabled>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+  </button>
+
+  <div class="topbar-actions">
+    <button class="topbar-btn primary" id="btn-set-folder" title="Set model folder for cycling">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+      FOLDER
+    </button>
+    <button class="topbar-btn" id="btn-open" title="Open a GLB file">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>
+      </svg>
+      OPEN
+    </button>
+    <button class="topbar-btn" id="btn-add-anims" title="Merge animations from another GLB">+ ANIMS</button>
+    <button class="topbar-btn" id="btn-edit" title="Toggle delete mode">&#9986; EDIT</button>
+    <button class="topbar-btn" id="btn-fix-mats" title="Fix materials: set single-sided">FIX MATS</button>
+    <button class="topbar-btn" id="btn-flip-normals" title="Flip normal map Y (GL↔DX)">FLIP Y</button>
+    <button class="topbar-btn warn" id="btn-detox" title="Meshy Detox: fix scale, remove junk clips">DETOX</button>
+    <button class="topbar-btn success" id="btn-export" title="Export combined GLB">EXPORT</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-block">
+    <div><span class="hud-label">tris</span> <span class="hud-val" id="hudTris">--</span></div>
+    <div><span class="hud-label">verts</span> <span class="hud-val" id="hudVerts">--</span></div>
+    <div><span class="hud-label">meshes</span> <span class="hud-val" id="hudMeshes">--</span></div>
+  </div>
+</div>
+
+<!-- Right Tool Strip -->
+<div class="toolstrip">
+  <button class="tool-btn" id="btnCamera" title="Camera controls">
+    <svg viewBox="0 0 24 24"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2.5 8.5A1.5 1.5 0 0 1 4 7h16a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5v-9z"/></svg>
+    <span class="tooltip">Camera (M)</span>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btnLighting" title="Lighting controls">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <span class="tooltip">Lighting (L)</span>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btnRender" title="Render mode">
+    <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/></svg>
+    <span class="tooltip">Render (S)</span>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btnFloor" title="Cycle floor mode (G)">
+    <svg viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M2 20L12 4l10 16"/><line x1="6" y1="14" x2="18" y2="14"/><line x1="8.5" y1="17" x2="15.5" y2="17"/></svg>
+    <span class="tooltip">Floor (G)</span>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btnBgMode" title="Cycle background (H)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/></svg>
+    <span class="tooltip">Background (H)</span>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btnPresets" title="Presets">
+    <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    <span class="tooltip">Presets</span>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btnAbout" title="About">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <span class="tooltip">About</span>
+  </button>
+</div>
+
+<!-- Animation Buttons (bottom-center, character viewer specific) -->
+<div id="anim-bar" style="display:none;"></div>
+
+<!-- Bottom Bar -->
+<div class="bottombar">
+  <div class="status-dot"></div>
+  <span>ready</span>
+  <div class="bottombar-sep"></div>
+  <span id="statusMode">Standard</span>
+  <div class="bottombar-sep"></div>
+  <span id="statusDims">--</span>
+  <div class="bottombar-sep"></div>
+  <span>LMB orbit &middot; MMB pan &middot; Scroll zoom</span>
+  <div style="margin-left:auto">
+    <span id="statusFps">-- fps</span>
+  </div>
+</div>
+
+<!-- Drop Overlay -->
+<div class="dropzone-overlay" id="dropOverlay">
+  <div class="dropzone-box">
+    <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="dropzone-text">DROP GLB FILE</div>
+    <div class="dropzone-sub">.glb supported &middot; drop 2 files to merge mesh + anims</div>
+  </div>
+</div>
+
+<!-- Loader -->
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="loader-ring"></div>
+</div>
+
+<!-- About Modal -->
+<div class="about-overlay" id="aboutOverlay">
+  <div class="about-window">
+    <button class="about-close" id="aboutClose">&times;</button>
+    <div class="about-title">CHARACTER VIEWER</div>
+    <div class="about-version">v1.0</div>
+    <div class="about-year">2026</div>
+    <div class="about-contact">johnny@z13labs.com</div>
+    <div class="about-links">
+      <a href="https://github.com/Johnny-Z13/threejs-workshop" target="_blank" rel="noopener">GitHub</a>
+      <span class="about-link-sep">·</span>
+      <a href="https://github.com/Johnny-Z13/threejs-workshop#readme" target="_blank" rel="noopener">README</a>
+      <span class="about-link-sep">·</span>
+      <a href="https://x.com/jvenmusic" target="_blank" rel="noopener">@jvenmusic</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Viewport -->
+<div id="viewport"></div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-input" accept=".glb" hidden>
+<input type="file" id="anim-file-input" accept=".glb" hidden>
+
+<!-- Confirm dialog -->
+<div id="confirm-overlay">
+  <div id="confirm-dialog">
+    <p id="confirm-msg">Delete this animation?</p>
+    <div class="btn-row">
+      <button class="btn-cancel">Cancel</button>
+      <button class="btn-confirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js Import Map -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+  }
+}
+</script>
+
+<!-- Main Application -->
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+/* Presets Panel */
+.presets-panel {
+  position: fixed;
+  top: 50%;
+  right: -320px;
+  transform: translateY(-50%);
+  width: 300px;
+  max-height: 80vh;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  z-index: 60;
+  transition: right 0.3s ease;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.presets-panel.open {
+  right: 0;
+}
+
+.presets-panel .panel-subtitle {
+  padding: 0 14px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Panel content scrolling */
+.presets-panel .panel-content {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.presets-panel .panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.presets-panel .panel-content::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.presets-panel .panel-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.presets-panel .panel-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Save Button */
+.preset-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-save-btn:hover {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.preset-save-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Import Button */
+.preset-import-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-import-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+/* Import Row */
+.preset-import-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.preset-import-row.hidden {
+  display: none;
+}
+
+.preset-import-input {
+  padding: 7px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  outline: none;
+  resize: vertical;
+  min-height: 50px;
+  transition: border-color 0.15s;
+}
+
+.preset-import-input:focus {
+  border-color: var(--accent);
+}
+
+.preset-import-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Save Input Row */
+.preset-save-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.preset-save-row.hidden {
+  display: none;
+}
+
+.preset-name-input {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.preset-name-input:focus {
+  border-color: var(--accent);
+}
+
+.preset-name-input::placeholder {
+  color: var(--text-dim);
+}
+
+.preset-confirm-btn {
+  padding: 7px 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: var(--bg-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.preset-confirm-btn:hover {
+  opacity: 0.85;
+}
+
+/* Preset List */
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.preset-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-item:hover {
+  background: var(--bg-primary);
+  border-color: var(--accent);
+}
+
+.preset-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.preset-item-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preset-item-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Export button */
+.preset-export-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.preset-export-btn:hover {
+  background: rgba(74, 158, 255, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.preset-export-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.preset-delete-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.preset-delete-btn:hover {
+  background: rgba(255, 107, 74, 0.15);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.preset-delete-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Toast notification */
+.preset-toast {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 6px 14px;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.preset-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Empty State */
+.preset-empty {
+  text-align: center;
+  padding: 24px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}

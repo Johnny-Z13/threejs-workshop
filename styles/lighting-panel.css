@@ -1,0 +1,87 @@
+/* Lighting Control Panel */
+.lighting-panel {
+  position: fixed;
+  top: 50%;
+  right: -280px;
+  transform: translateY(-50%);
+  width: 260px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  z-index: 60;
+  transition: right 0.3s ease;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.3);
+}
+
+.lighting-panel.open {
+  right: 0;
+}
+
+/* Preset Buttons */
+.light-preset-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.light-preset-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.light-preset-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.light-preset-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Light Sliders */
+.light-slider {
+  width: calc(100% - 40px);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-tertiary);
+  outline: none;
+  -webkit-appearance: none;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.light-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.light-slider::-webkit-slider-thumb:hover {
+  background: var(--text-primary);
+  transform: scale(1.2);
+}
+
+.light-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
