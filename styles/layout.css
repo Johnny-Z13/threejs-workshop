@@ -98,6 +98,17 @@ body.delete-mode #anim-bar button .delete-badge:hover {
   transform: scale(1.15);
 }
 
+/* Cycle / Shuffle mode buttons */
+#anim-bar .anim-mode-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
 /* ── Fullscreen mode — hide all UI chrome ── */
 body.fullscreen-mode .topbar,
 body.fullscreen-mode .bottombar,
