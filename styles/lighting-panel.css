@@ -2,20 +2,20 @@
 .lighting-panel {
   position: fixed;
   top: 50%;
-  left: -280px;
+  right: -280px;
   transform: translateY(-50%);
   width: 260px;
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-left: none;
-  border-radius: 0 6px 6px 0;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
   z-index: 60;
-  transition: left 0.3s ease;
-  box-shadow: 4px 0 12px rgba(0,0,0,0.3);
+  transition: right 0.3s ease;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.3);
 }
 
 .lighting-panel.open {
-  left: 0;
+  right: 0;
 }
 
 /* Preset Buttons */
