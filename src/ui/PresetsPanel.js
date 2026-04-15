@@ -175,20 +175,22 @@ export class PresetsPanel {
     presets.forEach(preset => {
       const item = document.createElement('div');
       item.className = 'preset-item';
+      if (preset.builtIn) item.classList.add('preset-builtin');
 
       const meta = this.buildMetaString(preset);
+      const badge = preset.builtIn ? '<span class="preset-badge">BUILT-IN</span>' : '';
 
       item.innerHTML = `
         <div class="preset-item-info">
-          <div class="preset-item-name">${this.escapeHtml(preset.name)}</div>
+          <div class="preset-item-name">${this.escapeHtml(preset.name)}${badge}</div>
           <div class="preset-item-meta">${meta}</div>
         </div>
         <button class="preset-export-btn" title="Copy JSON">
           <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
-        <button class="preset-delete-btn" title="Delete preset">
+        ${preset.builtIn ? '' : `<button class="preset-delete-btn" title="Delete preset">
           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        </button>
+        </button>`}
       `;
 
       item.querySelector('.preset-item-info').addEventListener('click', () => {
@@ -205,10 +207,13 @@ export class PresetsPanel {
         });
       });
 
-      item.querySelector('.preset-delete-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.presetManager.deletePreset(preset.timestamp);
-      });
+      const deleteBtn = item.querySelector('.preset-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.presetManager.deletePreset(preset.timestamp);
+        });
+      }
 
       container.appendChild(item);
     });

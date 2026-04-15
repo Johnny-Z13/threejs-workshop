@@ -60,7 +60,8 @@ export class ShaderRegistry {
       import('./library/dof.js'),
       import('./library/filmgrain.js'),
       import('./library/halftone.js'),
-      import('./library/outline.js')
+      import('./library/outline.js'),
+      import('./library/andy.js')
     ];
 
     const modules = await Promise.all(builtIns);

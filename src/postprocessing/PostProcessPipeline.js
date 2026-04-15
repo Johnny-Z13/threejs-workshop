@@ -57,16 +57,19 @@ export class PostProcessPipeline {
       import('./passes/VaporwavePass.js'),
       import('./passes/ThermalPass.js'),
       import('./passes/XRayPass.js'),
-      import('./passes/FilmGrainPass.js')
+      import('./passes/FilmGrainPass.js'),
+      import('./passes/PosterizeMonoPass.js')
     ]);
 
     const passNames = [
       'ascii', 'sketch', 'celshading', 'glitch', 'dithered', 'pixelated',
-      'crt', 'psychedelic', 'vhs', 'gameboy', 'vaporwave', 'thermal', 'xray', 'filmgrain'
+      'crt', 'psychedelic', 'vhs', 'gameboy', 'vaporwave', 'thermal', 'xray', 'filmgrain',
+      'andy'
     ];
     const classNames = [
       'AsciiPass', 'SketchPass', 'CelShadingPass', 'GlitchPass', 'DitheredPass', 'PixelatedPass',
-      'CRTPass', 'PsychedelicPass', 'VHSPass', 'GameBoyPass', 'VaporwavePass', 'ThermalPass', 'XRayPass', 'FilmGrainPass'
+      'CRTPass', 'PsychedelicPass', 'VHSPass', 'GameBoyPass', 'VaporwavePass', 'ThermalPass', 'XRayPass', 'FilmGrainPass',
+      'PosterizeMonoPass'
     ];
 
     passModules.forEach((mod, i) => {

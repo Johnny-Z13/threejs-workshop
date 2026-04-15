@@ -6,6 +6,37 @@ const MAX_PRESETS = 20;
 const PRESET_VERSION = 2;
 
 /**
+ * Built-in presets — always available, cannot be deleted
+ */
+const BUILT_IN_PRESETS = [
+  {
+    name: 'ANDY',
+    builtIn: true,
+    timestamp: 0,
+    version: 2,
+    material: { id: 'cinematic', params: { envMapIntensity: 1.0 } },
+    effects: [
+      {
+        id: 'andy',
+        params: {
+          toneLevels: 4,
+          contrast: 1.4,
+          brightness: 0.05,
+          edgeStrength: 0.3,
+          edgeThreshold: 0.12
+        }
+      }
+    ],
+    lighting: {
+      preset: 'dramatic',
+      intensities: { key: 3.5, fill: 0.05, rim: 0.15, ambient: 0.05, hemi: 0.1 }
+    },
+    camera: { mode: 'turntable', speed: 0.4, fov: 45 },
+    scene: { wireframe: false, bg: 'black', floor: 'none' }
+  }
+];
+
+/**
  * Manages saving and loading of visual configuration presets (v2: material + effects stack)
  */
 export class PresetManager {
@@ -158,10 +189,20 @@ export class PresetManager {
     if (preset.scene.wireframe !== this.renderModeController.wireframeEnabled) {
       EventBus.emit('toggle:wireframe');
     }
+
+    // 8. Background and floor modes (optional, from built-in presets)
+    if (preset.scene.bg) {
+      EventBus.emit('bg:set', preset.scene.bg);
+    }
+    if (preset.scene.floor) {
+      EventBus.emit('floor:set', preset.scene.floor);
+    }
   }
 
   deletePreset(timestamp) {
-    const presets = this.getAllPresets().filter(p => p.timestamp !== timestamp);
+    // Built-in presets cannot be deleted
+    if (BUILT_IN_PRESETS.some(p => p.timestamp === timestamp)) return;
+    const presets = this.getAllPresets().filter(p => p.timestamp !== timestamp && !p.builtIn);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
     EventBus.emit('presets:changed');
   }
@@ -170,9 +211,10 @@ export class PresetManager {
     try {
       const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
       // Auto-migrate v1 presets on read
-      return raw.map(p => (!p.version || p.version < 2) ? PresetManager.migrateV1(p) : p);
+      const userPresets = raw.map(p => (!p.version || p.version < 2) ? PresetManager.migrateV1(p) : p);
+      return [...userPresets, ...BUILT_IN_PRESETS];
     } catch {
-      return [];
+      return [...BUILT_IN_PRESETS];
     }
   }
 
