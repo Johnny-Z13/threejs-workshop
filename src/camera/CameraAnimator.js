@@ -97,6 +97,9 @@ export class CameraAnimator {
 
   fit() {
     if (!this.modelBounds) return;
+    // If another camera owner has locked controls (e.g. Free Cam), don't
+    // teleport the camera — let it stay wherever the user has flown.
+    if (this.controls.locked) return;
     const { center, radius, box } = this.modelBounds;
 
     if (this.mode !== 'none') {

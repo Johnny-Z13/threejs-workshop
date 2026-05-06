@@ -367,11 +367,8 @@ class App {
       const delta = this.animationManager.update();
       this.cameraAnimator.update(delta);
       this.freeCam.update(delta);
-      // OrbitControls.update() drags the camera toward its target via damping
-      // even when disabled — skip it entirely while Free Cam is driving.
-      if (!this.freeCam.isEnabled()) {
-        this.controls.update();
-      }
+      // Controls.update() is a no-op when locked by Free Cam.
+      this.controls.update();
 
       // Post-processing renders via composer when active, otherwise standard render
       if (!this.postProcess.render(delta)) {

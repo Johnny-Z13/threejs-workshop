@@ -52,15 +52,21 @@ export class FreeCamController {
     this.enabled = on;
     if (on) {
       this._syncYawPitchFromCamera();
-      this.controls.setEnabled(false);
+      // Clear any active camera animation mode first.
       EventBus.emit('camera:mode', 'none');
+      // Lock OrbitControls so async events (model:loaded → fit, setMode, etc.)
+      // can't silently re-enable orbit input behind us.
+      this.controls.setLocked(true);
       window.addEventListener('keydown', this._onKeyDown);
       window.addEventListener('keyup', this._onKeyUp);
       this.domElement.addEventListener('mousedown', this._onMouseDown);
       document.addEventListener('pointerlockchange', this._onPointerLockChange);
       this.domElement.style.cursor = 'crosshair';
     } else {
+      this.controls.setLocked(false);
       this.controls.setEnabled(true);
+      // Anchor OrbitControls' target just in front of where the camera
+      // ended up, so it doesn't yank back to the old target.
       const tgt = new THREE.Vector3();
       this.camera.getWorldDirection(tgt);
       tgt.multiplyScalar(2).add(this.camera.position);
