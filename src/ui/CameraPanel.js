@@ -29,7 +29,7 @@ export class CameraPanel {
           </button>
           <div class="freecam-hint" id="freeCamHint" hidden>
             <div><strong>WASD</strong> move &middot; <strong>QE</strong> down/up</div>
-            <div><strong>Click</strong> to look &middot; <strong>Esc</strong> release</div>
+            <div><strong>Drag</strong> mouse to look</div>
             <div><strong>Shift</strong> sprint &middot; <strong>Ctrl</strong> slow</div>
           </div>
           <div class="freecam-speed" id="freeCamSpeedRow" hidden>

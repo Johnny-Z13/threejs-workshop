@@ -365,10 +365,14 @@ class App {
 
     renderer.setAnimationLoop((time) => {
       const delta = this.animationManager.update();
-      this.cameraAnimator.update(delta);
-      this.freeCam.update(delta);
-      // Controls.update() is a no-op when locked by Free Cam.
-      this.controls.update();
+
+      if (this.freeCam.isEnabled()) {
+        // Free Cam owns the camera — no other camera system runs.
+        this.freeCam.update(delta);
+      } else {
+        this.cameraAnimator.update(delta);
+        this.controls.update();
+      }
 
       // Post-processing renders via composer when active, otherwise standard render
       if (!this.postProcess.render(delta)) {
