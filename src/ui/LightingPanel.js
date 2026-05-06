@@ -23,6 +23,10 @@ export class LightingPanel {
       </div>
       <div class="panel-content">
         <div class="panel-section">
+          <button class="lights-off-btn" id="lightsOffToggle" title="Disable all lights to inspect baked lighting">All Lights Off</button>
+        </div>
+
+        <div class="panel-section">
           <label class="panel-label">Preset</label>
           <div class="light-preset-buttons" id="lightingPresets"></div>
         </div>
@@ -117,6 +121,19 @@ export class LightingPanel {
       this.updateSliders();
       this.updateActivePreset(presetId);
       this.resetDial();
+    });
+
+    const lightsOffBtn = document.getElementById('lightsOffToggle');
+    lightsOffBtn?.addEventListener('click', () => {
+      const next = !this.lightingController.isAllOff();
+      EventBus.emit('lighting:setAllOff', next);
+    });
+
+    EventBus.on('lighting:allOff:changed', (off) => {
+      lightsOffBtn?.classList.toggle('active', off);
+      lightsOffBtn.textContent = off ? 'Lights Off (baked only)' : 'All Lights Off';
+      const panel = document.getElementById('lightingPanel');
+      panel?.classList.toggle('lights-disabled', off);
     });
 
     this.setupDial();

@@ -134,3 +134,38 @@
   cursor: pointer;
   border: none;
 }
+
+/* All Lights Off toggle */
+.lights-off-btn {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lights-off-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.lights-off-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* When lights are off, dim the per-light controls to signal they're inactive */
+.lighting-panel.lights-disabled .light-slider,
+.lighting-panel.lights-disabled .light-dial,
+.lighting-panel.lights-disabled .light-preset-buttons {
+  opacity: 0.45;
+}

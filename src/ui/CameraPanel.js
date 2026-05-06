@@ -23,6 +23,24 @@ export class CameraPanel {
       </div>
       <div class="panel-content">
         <div class="panel-section">
+          <button class="freecam-toggle-btn" id="freeCamToggle" title="WASD + mouse look (Unreal-style)">
+            <svg viewBox="0 0 24 24"><path d="M12 2 L12 22 M2 12 L22 12"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Free Cam</span>
+          </button>
+          <div class="freecam-hint" id="freeCamHint" hidden>
+            <div><strong>WASD</strong> move &middot; <strong>QE</strong> down/up</div>
+            <div><strong>Click</strong> to look &middot; <strong>Esc</strong> release</div>
+            <div><strong>Shift</strong> sprint &middot; <strong>Ctrl</strong> slow</div>
+          </div>
+          <div class="freecam-speed" id="freeCamSpeedRow" hidden>
+            <label class="panel-label">Speed</label>
+            <input type="range" class="camera-slider" id="freeCamSpeedSlider"
+                   min="0.2" max="4" step="0.1" value="1.0">
+            <span class="slider-value" id="freeCamSpeedValue">1.0&times;</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
           <label class="panel-label">Animation Mode</label>
           <div class="camera-mode-grid">
             <button class="cam-mode-btn" data-mode="none">
@@ -133,6 +151,27 @@ export class CameraPanel {
     EventBus.on('camera:mode:changed', (mode) => {
       this.currentMode = mode;
       this.updateActiveMode(mode);
+    });
+
+    // Free Cam toggle
+    const freeCamBtn = document.getElementById('freeCamToggle');
+    freeCamBtn?.addEventListener('click', () => {
+      const willEnable = !freeCamBtn.classList.contains('active');
+      EventBus.emit('freecam:setEnabled', willEnable);
+    });
+
+    EventBus.on('freecam:changed', (on) => {
+      freeCamBtn?.classList.toggle('active', on);
+      document.getElementById('freeCamHint').hidden = !on;
+      document.getElementById('freeCamSpeedRow').hidden = !on;
+    });
+
+    const freeCamSpeed = document.getElementById('freeCamSpeedSlider');
+    const freeCamSpeedVal = document.getElementById('freeCamSpeedValue');
+    freeCamSpeed?.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      freeCamSpeedVal.textContent = v.toFixed(1) + '×';
+      EventBus.emit('freecam:setSpeed', v);
     });
   }
 

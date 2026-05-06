@@ -9,10 +9,19 @@ export class KeyboardShortcuts {
   constructor() {
     this.currentMaterialIndex = 0;
     this.materialShaders = [];
+    this.freeCamActive = false;
     this.shortcuts = this.defineShortcuts();
     this.setupListener();
     this.initializeShaderList();
+
+    EventBus.on('freecam:changed', (on) => { this.freeCamActive = on; });
   }
+
+  // Keys claimed by FreeCamController while it's active
+  static FREECAM_KEYS = new Set([
+    'w', 'a', 's', 'd', 'q', 'e',
+    'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
+  ]);
 
   initializeShaderList() {
     EventBus.on('shaders:loaded', () => {
@@ -104,6 +113,12 @@ export class KeyboardShortcuts {
       }
 
       const key = e.key.toLowerCase();
+
+      // Let FreeCam own movement keys when it's active
+      if (this.freeCamActive && KeyboardShortcuts.FREECAM_KEYS.has(key)) {
+        return;
+      }
+
       const handler = this.shortcuts[key];
 
       if (handler) {

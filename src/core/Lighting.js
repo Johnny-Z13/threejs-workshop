@@ -35,9 +35,43 @@ export class LightingController {
     this.basePositions = {};
     this.captureBasePositions();
 
+    this.lightsOff = false;
+    this.savedIntensities = null;
+
     EventBus.on('lighting:preset', (presetId) => this.applyPreset(presetId));
     EventBus.on('lighting:setIntensity', (lightName, intensity) => this.setLightIntensity(lightName, intensity));
     EventBus.on('lighting:setRotation', (angle) => this.setRotation(angle));
+    EventBus.on('lighting:setAllOff', (off) => this.setAllOff(off));
+  }
+
+  setAllOff(off) {
+    if (off === this.lightsOff) return;
+    const names = ['key', 'fill', 'rim', 'ambient', 'hemi'];
+    if (off) {
+      this.savedIntensities = {};
+      for (const name of names) {
+        if (this.lights[name]) {
+          this.savedIntensities[name] = this.lights[name].intensity;
+          this.lights[name].intensity = 0;
+        }
+      }
+      this.lightsOff = true;
+    } else {
+      if (this.savedIntensities) {
+        for (const name of names) {
+          if (this.lights[name]) {
+            this.lights[name].intensity = this.savedIntensities[name] ?? 0;
+          }
+        }
+      }
+      this.savedIntensities = null;
+      this.lightsOff = false;
+    }
+    EventBus.emit('lighting:allOff:changed', this.lightsOff);
+  }
+
+  isAllOff() {
+    return this.lightsOff;
   }
 
   applyPreset(presetId) {
@@ -47,6 +81,18 @@ export class LightingController {
     preset.setup();
     this.captureBasePositions();
     this.rotation = 0;
+
+    if (this.lightsOff) {
+      const names = ['key', 'fill', 'rim', 'ambient', 'hemi'];
+      this.savedIntensities = {};
+      for (const name of names) {
+        if (this.lights[name]) {
+          this.savedIntensities[name] = this.lights[name].intensity;
+          this.lights[name].intensity = 0;
+        }
+      }
+    }
+
     EventBus.emit('lighting:changed', presetId);
   }
 
@@ -119,13 +165,19 @@ export class LightingController {
 
   setLightIntensity(lightName, intensity) {
     const light = this.lights[lightName];
-    if (light) {
+    if (!light) return;
+    if (this.lightsOff) {
+      if (this.savedIntensities) this.savedIntensities[lightName] = intensity;
+    } else {
       light.intensity = intensity;
-      EventBus.emit('lighting:intensity:changed', lightName, intensity);
     }
+    EventBus.emit('lighting:intensity:changed', lightName, intensity);
   }
 
   getLightIntensity(lightName) {
+    if (this.lightsOff && this.savedIntensities && lightName in this.savedIntensities) {
+      return this.savedIntensities[lightName];
+    }
     const light = this.lights[lightName];
     return light ? light.intensity : 0;
   }

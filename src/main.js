@@ -11,6 +11,7 @@ import { ConfirmDialog } from './ui/ConfirmDialog.js';
 import { AnimationBar } from './ui/AnimationBar.js';
 import { Toolbar } from './ui/Toolbar.js';
 import { CameraAnimator } from './camera/CameraAnimator.js';
+import { FreeCamController } from './camera/FreeCamController.js';
 import { CameraPanel } from './ui/CameraPanel.js';
 import { LightingPanel } from './ui/LightingPanel.js';
 import { PostProcessPipeline } from './postprocessing/PostProcessPipeline.js';
@@ -42,6 +43,15 @@ class App {
 
     this.lightingController = new LightingController(this.sceneSetup.lights);
     this.cameraAnimator = new CameraAnimator(this.sceneSetup.camera, this.controls);
+    this.freeCam = new FreeCamController(
+      this.sceneSetup.camera,
+      this.controls,
+      this.sceneSetup.renderer.domElement
+    );
+    EventBus.on('model:loaded', (data) => {
+      const r = data?.bounds?.radius;
+      this.freeCam.setSceneScale(r);
+    });
     this.cameraPanel = new CameraPanel();
     this.lightingPanel = new LightingPanel(this.lightingController);
 
@@ -356,6 +366,7 @@ class App {
     renderer.setAnimationLoop((time) => {
       const delta = this.animationManager.update();
       this.cameraAnimator.update(delta);
+      this.freeCam.update(delta);
       this.controls.update();
 
       // Post-processing renders via composer when active, otherwise standard render
