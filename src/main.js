@@ -394,3 +394,6 @@ class App {
 
 // ── Boot ──
 const app = new App();
+window.__app = app;
+window.__freeCam = app.freeCam;
+console.log('[App] booted. Try: window.__freeCam.setEnabled(true)');

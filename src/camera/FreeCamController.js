@@ -63,22 +63,24 @@ export class FreeCamController {
 
       this._syncYawPitchFromCamera();
 
-      window.addEventListener('keydown', this._onKeyDown);
-      window.addEventListener('keyup', this._onKeyUp);
-      this.domElement.addEventListener('mousedown', this._onMouseDown);
-      window.addEventListener('mouseup', this._onMouseUp);
-      window.addEventListener('mousemove', this._onMouseMove);
-      this.domElement.addEventListener('contextmenu', this._onContextMenu);
+      // Attach to window for everything so no overlay or stacking context
+      // can intercept the events.
+      window.addEventListener('keydown', this._onKeyDown, true);
+      window.addEventListener('keyup', this._onKeyUp, true);
+      window.addEventListener('mousedown', this._onMouseDown, true);
+      window.addEventListener('mouseup', this._onMouseUp, true);
+      window.addEventListener('mousemove', this._onMouseMove, true);
+      window.addEventListener('contextmenu', this._onContextMenu, true);
 
       this.domElement.style.cursor = 'crosshair';
     } else {
       console.log('[FreeCam] OFF — rebuilding OrbitControls');
-      window.removeEventListener('keydown', this._onKeyDown);
-      window.removeEventListener('keyup', this._onKeyUp);
-      this.domElement.removeEventListener('mousedown', this._onMouseDown);
-      window.removeEventListener('mouseup', this._onMouseUp);
-      window.removeEventListener('mousemove', this._onMouseMove);
-      this.domElement.removeEventListener('contextmenu', this._onContextMenu);
+      window.removeEventListener('keydown', this._onKeyDown, true);
+      window.removeEventListener('keyup', this._onKeyUp, true);
+      window.removeEventListener('mousedown', this._onMouseDown, true);
+      window.removeEventListener('mouseup', this._onMouseUp, true);
+      window.removeEventListener('mousemove', this._onMouseMove, true);
+      window.removeEventListener('contextmenu', this._onContextMenu, true);
 
       this.keys.clear();
       this._dragging = false;
@@ -115,11 +117,18 @@ export class FreeCamController {
   }
 
   _onMouseDown(e) {
-    e.preventDefault();
+    // Only start a look-drag if the click is on the canvas (or its viewport
+    // container). UI clicks (panels, buttons) should pass through normally.
+    const t = e.target;
+    const isCanvas = t === this.domElement ||
+                     t === document.getElementById('viewport') ||
+                     (t && t.closest && t.closest('#viewport'));
+    if (!isCanvas) return;
     this._dragging = true;
     this._lastX = e.clientX;
     this._lastY = e.clientY;
     this.domElement.style.cursor = 'grabbing';
+    console.log('[FreeCam] drag start');
   }
 
   _onMouseUp() {
@@ -140,6 +149,10 @@ export class FreeCamController {
     const limit = Math.PI / 2 - 0.001;
     if (this._pitch > limit) this._pitch = limit;
     if (this._pitch < -limit) this._pitch = -limit;
+    if (!this._lastLogTime || performance.now() - this._lastLogTime > 500) {
+      this._lastLogTime = performance.now();
+      console.log(`[FreeCam] yaw=${this._yaw.toFixed(2)} pitch=${this._pitch.toFixed(2)}`);
+    }
   }
 
   setSceneScale(radius) {
