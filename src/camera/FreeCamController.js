@@ -8,8 +8,9 @@ import { EventBus } from '../utils/EventBus.js';
  * - Q/E lower/raise.
  * - Shift = sprint, Ctrl = slow.
  *
- * Owns the camera transform completely while enabled. The render loop
- * skips all other camera systems when this is active.
+ * While enabled, OrbitControls is disabled (controls.enabled = false) so its
+ * pointerdown handler early-returns before setPointerCapture. The render loop
+ * skips controls.update() so OrbitControls cannot pull the camera back.
  */
 export class FreeCamController {
   constructor(camera, controlsWrapper, domElement) {
@@ -57,14 +58,11 @@ export class FreeCamController {
     this.enabled = on;
 
     if (on) {
-      console.log('[FreeCam] ON — disposing OrbitControls');
       EventBus.emit('camera:mode', 'none');
-      this.controlsWrapper.dispose();
+      this.controlsWrapper.setEnabled(false);
 
       this._syncYawPitchFromCamera();
 
-      // Attach to window for everything so no overlay or stacking context
-      // can intercept the events.
       window.addEventListener('keydown', this._onKeyDown, true);
       window.addEventListener('keyup', this._onKeyUp, true);
       window.addEventListener('mousedown', this._onMouseDown, true);
@@ -74,7 +72,6 @@ export class FreeCamController {
 
       this.domElement.style.cursor = 'crosshair';
     } else {
-      console.log('[FreeCam] OFF — rebuilding OrbitControls');
       window.removeEventListener('keydown', this._onKeyDown, true);
       window.removeEventListener('keyup', this._onKeyUp, true);
       window.removeEventListener('mousedown', this._onMouseDown, true);
@@ -86,10 +83,14 @@ export class FreeCamController {
       this._dragging = false;
       this.domElement.style.cursor = '';
 
+      // Aim OrbitControls at where the camera is currently looking, so it
+      // doesn't snap back to the old target on the next interaction.
       const tgt = new THREE.Vector3();
       this.camera.getWorldDirection(tgt);
       tgt.multiplyScalar(2).add(this.camera.position);
-      this.controlsWrapper.rebuild(tgt);
+      this.controlsWrapper.setTarget(tgt.x, tgt.y, tgt.z);
+      this.controlsWrapper.setEnabled(true);
+      this.controlsWrapper.update();
     }
 
     EventBus.emit('freecam:changed', this.enabled);
@@ -117,8 +118,6 @@ export class FreeCamController {
   }
 
   _onMouseDown(e) {
-    // Only start a look-drag if the click is on the canvas (or its viewport
-    // container). UI clicks (panels, buttons) should pass through normally.
     const t = e.target;
     const isCanvas = t === this.domElement ||
                      t === document.getElementById('viewport') ||
@@ -128,7 +127,6 @@ export class FreeCamController {
     this._lastX = e.clientX;
     this._lastY = e.clientY;
     this.domElement.style.cursor = 'grabbing';
-    console.log('[FreeCam] drag start');
   }
 
   _onMouseUp() {
@@ -149,10 +147,6 @@ export class FreeCamController {
     const limit = Math.PI / 2 - 0.001;
     if (this._pitch > limit) this._pitch = limit;
     if (this._pitch < -limit) this._pitch = -limit;
-    if (!this._lastLogTime || performance.now() - this._lastLogTime > 500) {
-      this._lastLogTime = performance.now();
-      console.log(`[FreeCam] yaw=${this._yaw.toFixed(2)} pitch=${this._pitch.toFixed(2)}`);
-    }
   }
 
   setSceneScale(radius) {
@@ -169,7 +163,6 @@ export class FreeCamController {
     const scale = this._sceneRadius || 1;
     const speed = this.baseSpeed * mul * scale;
 
-    // Yaw-only horizontal axes so W goes "forward on the ground" not into sky.
     const yawSin = Math.sin(this._yaw);
     const yawCos = Math.cos(this._yaw);
     this._forward.set(-yawSin, 0, -yawCos);
@@ -188,7 +181,6 @@ export class FreeCamController {
       this.camera.position.add(this._velocity);
     }
 
-    // Apply look orientation directly to the camera quaternion.
     this._euler.set(this._pitch, this._yaw, 0, 'YXZ');
     this.camera.quaternion.setFromEuler(this._euler);
     this.camera.updateMatrixWorld();

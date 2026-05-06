@@ -25,6 +25,8 @@ export class CameraAnimator {
     this._modePos = new THREE.Vector3();
     this._modeTarget = new THREE.Vector3();
 
+    this.freeCamActive = false;
+    EventBus.on('freecam:changed', (on) => { this.freeCamActive = on; });
     EventBus.on('camera:mode', (mode) => this.setMode(mode));
     EventBus.on('camera:setSpeed', (speed) => { this.speed = speed; });
     EventBus.on('camera:setFOV', (fov) => this.setFOV(fov));
@@ -46,11 +48,8 @@ export class CameraAnimator {
       return;
     }
 
-    // If Free Cam (or anything else) tore down OrbitControls, restore them
-    // before entering an animation mode so beginTransition has a target.
-    if (!this.controls.controls) {
-      EventBus.emit('freecam:setEnabled', false);
-    }
+    // Picking an animated mode exits Free Cam.
+    EventBus.emit('freecam:setEnabled', false);
 
     // Entering a new mode (from manual or from another mode)
     const prevMode = this.mode;
@@ -103,9 +102,8 @@ export class CameraAnimator {
 
   fit() {
     if (!this.modelBounds) return;
-    // If another camera system owns the camera (e.g. Free Cam disposed
-    // OrbitControls), don't teleport — let the user stay where they are.
-    if (!this.controls.controls) return;
+    // Don't teleport while Free Cam owns the camera.
+    if (this.freeCamActive) return;
     const { center, radius, box } = this.modelBounds;
 
     if (this.mode !== 'none') {
