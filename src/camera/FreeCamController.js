@@ -2,14 +2,18 @@ import * as THREE from 'three';
 import { EventBus } from '../utils/EventBus.js';
 
 /**
- * Unreal-style free camera. WASD to move, QE for down/up,
- * mouse to look (pointer-locked while held by viewport).
- * Shift = sprint, Ctrl = slow.
+ * Unreal-style free camera. WASD to move, QE for down/up.
+ * Mouse look uses pointer lock when available; otherwise falls back to
+ * click-and-drag so it still works in iframes / locked-down browsers.
+ *
+ * While active, OrbitControls is fully disposed so it cannot interfere
+ * with camera input or position. A fresh OrbitControls is rebuilt when
+ * Free Cam exits.
  */
 export class FreeCamController {
-  constructor(camera, controls, domElement) {
+  constructor(camera, controlsWrapper, domElement) {
     this.camera = camera;
-    this.controls = controls;
+    this.controlsWrapper = controlsWrapper;
     this.domElement = domElement;
     this.enabled = false;
 
@@ -22,6 +26,12 @@ export class FreeCamController {
     this.keys = new Set();
     this._yaw = 0;
     this._pitch = 0;
+
+    this._dragLooking = false;
+    this._lastMouseX = 0;
+    this._lastMouseY = 0;
+    this._usePointerLock = !!document.body.requestPointerLock;
+
     this._velocity = new THREE.Vector3();
     this._forward = new THREE.Vector3();
     this._right = new THREE.Vector3();
@@ -31,16 +41,13 @@ export class FreeCamController {
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onKeyUp = this._onKeyUp.bind(this);
     this._onMouseDown = this._onMouseDown.bind(this);
+    this._onMouseUp = this._onMouseUp.bind(this);
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onPointerLockChange = this._onPointerLockChange.bind(this);
+    this._onContextMenu = (e) => e.preventDefault();
 
     EventBus.on('freecam:setEnabled', (on) => this.setEnabled(on));
     EventBus.on('freecam:setSpeed', (mul) => { this.userSpeedMul = mul; });
-
-    // If the user activates a camera animation mode, free cam should release.
-    EventBus.on('camera:mode:changed', (mode) => {
-      if (this.enabled && mode && mode !== 'none') this.setEnabled(false);
-    });
   }
 
   isEnabled() {
@@ -50,39 +57,47 @@ export class FreeCamController {
   setEnabled(on) {
     if (on === this.enabled) return;
     this.enabled = on;
+
     if (on) {
-      this._syncYawPitchFromCamera();
-      // Clear any active camera animation mode first.
+      console.log('[FreeCam] enabled — disposing OrbitControls');
+      // Stop any camera animation mode and tear down OrbitControls completely.
       EventBus.emit('camera:mode', 'none');
-      // Lock OrbitControls so async events (model:loaded → fit, setMode, etc.)
-      // can't silently re-enable orbit input behind us.
-      this.controls.setLocked(true);
+      this.controlsWrapper.dispose();
+
+      this._syncYawPitchFromCamera();
+
       window.addEventListener('keydown', this._onKeyDown);
       window.addEventListener('keyup', this._onKeyUp);
       this.domElement.addEventListener('mousedown', this._onMouseDown);
+      window.addEventListener('mouseup', this._onMouseUp);
+      this.domElement.addEventListener('contextmenu', this._onContextMenu);
       document.addEventListener('pointerlockchange', this._onPointerLockChange);
+
       this.domElement.style.cursor = 'crosshair';
     } else {
-      this.controls.setLocked(false);
-      this.controls.setEnabled(true);
-      // Anchor OrbitControls' target just in front of where the camera
-      // ended up, so it doesn't yank back to the old target.
-      const tgt = new THREE.Vector3();
-      this.camera.getWorldDirection(tgt);
-      tgt.multiplyScalar(2).add(this.camera.position);
-      this.controls.setTarget(tgt.x, tgt.y, tgt.z);
-
+      console.log('[FreeCam] disabled — rebuilding OrbitControls');
       window.removeEventListener('keydown', this._onKeyDown);
       window.removeEventListener('keyup', this._onKeyUp);
       this.domElement.removeEventListener('mousedown', this._onMouseDown);
+      window.removeEventListener('mouseup', this._onMouseUp);
+      this.domElement.removeEventListener('contextmenu', this._onContextMenu);
       document.removeEventListener('pointerlockchange', this._onPointerLockChange);
-      document.removeEventListener('mousemove', this._onMouseMove);
+      window.removeEventListener('mousemove', this._onMouseMove);
+
       if (document.pointerLockElement === this.domElement) {
         document.exitPointerLock();
       }
       this.keys.clear();
+      this._dragLooking = false;
       this.domElement.style.cursor = '';
+
+      // Rebuild OrbitControls anchored 2 units in front of where the camera ended up.
+      const tgt = new THREE.Vector3();
+      this.camera.getWorldDirection(tgt);
+      tgt.multiplyScalar(2).add(this.camera.position);
+      this.controlsWrapper.rebuild(tgt);
     }
+
     EventBus.emit('freecam:changed', this.enabled);
   }
 
@@ -111,47 +126,63 @@ export class FreeCamController {
   }
 
   _onMouseDown(e) {
-    if (e.button !== 0) return;
-    if (document.pointerLockElement !== this.domElement) {
-      this.domElement.requestPointerLock?.();
+    if (e.button !== 0 && e.button !== 2) return;
+    e.preventDefault();
+    if (this._usePointerLock && document.pointerLockElement !== this.domElement) {
+      // Try pointer lock; if it fails or is denied, the pointerlockerror
+      // event won't fire here — fall back gracefully via drag-look below.
+      try { this.domElement.requestPointerLock(); } catch (_) { /* ignore */ }
+    }
+    // Always start drag-look as a fallback in case pointer lock is denied.
+    this._dragLooking = true;
+    this._lastMouseX = e.clientX;
+    this._lastMouseY = e.clientY;
+    window.addEventListener('mousemove', this._onMouseMove);
+  }
+
+  _onMouseUp() {
+    if (this._dragLooking && document.pointerLockElement !== this.domElement) {
+      this._dragLooking = false;
+      window.removeEventListener('mousemove', this._onMouseMove);
     }
   }
 
   _onPointerLockChange() {
     if (document.pointerLockElement === this.domElement) {
-      document.addEventListener('mousemove', this._onMouseMove);
+      this._dragLooking = false; // pointer lock takes over
+      window.addEventListener('mousemove', this._onMouseMove);
     } else {
-      document.removeEventListener('mousemove', this._onMouseMove);
+      window.removeEventListener('mousemove', this._onMouseMove);
     }
   }
 
   _onMouseMove(e) {
-    this._yaw -= e.movementX * this.lookSensitivity;
-    this._pitch -= e.movementY * this.lookSensitivity;
+    let dx, dy;
+    if (document.pointerLockElement === this.domElement) {
+      dx = e.movementX;
+      dy = e.movementY;
+    } else if (this._dragLooking) {
+      dx = e.clientX - this._lastMouseX;
+      dy = e.clientY - this._lastMouseY;
+      this._lastMouseX = e.clientX;
+      this._lastMouseY = e.clientY;
+    } else {
+      return;
+    }
+
+    this._yaw -= dx * this.lookSensitivity;
+    this._pitch -= dy * this.lookSensitivity;
     const limit = Math.PI / 2 - 0.001;
     if (this._pitch > limit) this._pitch = limit;
     if (this._pitch < -limit) this._pitch = -limit;
-    this._applyLook();
   }
 
-  _applyLook() {
-    this._euler.set(this._pitch, this._yaw, 0, 'YXZ');
-    this.camera.quaternion.setFromEuler(this._euler);
-  }
-
-  /**
-   * Speed scales with model size so big rooms still feel responsive.
-   * Called by main with the current model bounds (or null).
-   */
   setSceneScale(radius) {
     this._sceneRadius = radius && isFinite(radius) ? radius : 1;
   }
 
   update(deltaTime) {
     if (!this.enabled) return;
-
-    // Re-apply quaternion in case OrbitControls touched things on disable frame
-    this._applyLook();
 
     let mul = this.userSpeedMul;
     if (this.keys.has('shift')) mul *= this.sprintMul;
@@ -160,9 +191,13 @@ export class FreeCamController {
     const scale = this._sceneRadius || 1;
     const speed = this.baseSpeed * mul * scale;
 
-    // Camera-relative axes
-    this.camera.getWorldDirection(this._forward);
-    this._right.crossVectors(this._forward, this._up).normalize();
+    // Build movement in camera-relative space using yaw only (Q/E stay world-up).
+    const yawSin = Math.sin(this._yaw);
+    const yawCos = Math.cos(this._yaw);
+    // camera-forward (in XZ plane): (-sin(yaw), 0, -cos(yaw))
+    this._forward.set(-yawSin, 0, -yawCos);
+    // camera-right: forward × up
+    this._right.set(yawCos, 0, -yawSin);
 
     this._velocity.set(0, 0, 0);
     if (this.keys.has('w') || this.keys.has('arrowup'))    this._velocity.add(this._forward);
@@ -176,5 +211,10 @@ export class FreeCamController {
       this._velocity.normalize().multiplyScalar(speed * deltaTime);
       this.camera.position.add(this._velocity);
     }
+
+    // Apply look orientation last so nothing else can override it this frame.
+    this._euler.set(this._pitch, this._yaw, 0, 'YXZ');
+    this.camera.quaternion.setFromEuler(this._euler);
+    this.camera.updateMatrixWorld();
   }
 }
